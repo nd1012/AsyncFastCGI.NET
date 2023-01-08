@@ -68,7 +68,7 @@ namespace AsyncFastCGI {
                 input = new Input(request, stream, this.inputRecord, this.inputBuffer, this.maxHeaderSize);
 
                 try {
-                    await input.Initialize();
+                    await input.Initialize().ConfigureAwait(false);
                 } catch (ClientException e) {
                     Console.Error.WriteLine(e.Message);
                     request.Close();
@@ -78,10 +78,10 @@ namespace AsyncFastCGI {
                 output = new Output(input, request, stream, input.GetFastCgiRequestID(), this.outputRecord, this.outputBuffer);
 
                 try {
-                    await this.requestHandler(input, output);
+                    await this.requestHandler(input, output).ConfigureAwait(false);
 
                     if (!output.IsEnded()) {
-                        await output.EndAsync();
+                        await output.EndAsync().ConfigureAwait(false);
                     }
                 } catch (ClientException e) {
                     Console.Error.WriteLine(e.Message);

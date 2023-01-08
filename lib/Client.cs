@@ -18,6 +18,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
+using System.Linq;
 
 namespace AsyncFastCGI
 {
@@ -146,7 +148,7 @@ namespace AsyncFastCGI
         /// <summary>
         /// Main entry point of the client library.
         /// </summary>
-        public async Task StartAsync()
+        public async Task StartAsync(CancellationToken cancellationToken = default)
         {
             Socket connection = null;
 
@@ -187,7 +189,7 @@ namespace AsyncFastCGI
                 the new connections arrive.
             */
             for (int i = 0; i < this.maxConcurrentRequests; i++) {
-                connection = await this.AcceptConnection(listeningSocket);
+                connection = await this.AcceptConnection(listeningSocket).ConfigureAwait(false);
 
                 this.requests[i] = new Request(i, this.RequestHandler, this.GetMaxHeaderSize());
                 this.tasks[i] = this.requests[i].NewConnection(connection);
@@ -199,11 +201,18 @@ namespace AsyncFastCGI
                 Re-use the Request objects to minimize memory
                 allocation and garbage collection.
             */
-            while(true) {
-                int index = (await Task.WhenAny(this.tasks)).Result;
-                connection = await this.AcceptConnection(listeningSocket);
+            while(!cancellationToken.IsCancellationRequested) {
+                int index = (await Task.WhenAny(this.tasks).ConfigureAwait(false)).Result;
+                if (cancellationToken.IsCancellationRequested) break;
+                connection = await this.AcceptConnection(listeningSocket).ConfigureAwait(false);
                 this.tasks[index] = this.requests[index].NewConnection(connection);
             }
+
+            /*
+                Stop listening and wait for all running tasks to finish
+             */
+            listeningSocket.Close();
+            Task.WaitAll(this.tasks);
         }
 
         /// <summary>
@@ -216,7 +225,7 @@ namespace AsyncFastCGI
             Socket connection;
 
             try {
-                connection = await listeningSocket.AcceptAsync();
+                connection = await listeningSocket.AcceptAsync().ConfigureAwait(false);
             } catch (Exception e) {
                 throw(new ClientException("Listening socket lost. (Socket.AcceptAsync)", e));
             }

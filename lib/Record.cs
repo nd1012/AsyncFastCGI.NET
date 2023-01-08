@@ -107,7 +107,7 @@ namespace AsyncFastCGI {
 
             if (!skipRead) {
                 int remaining = MAX_RECORD_SIZE - bufferEnd;
-                int bytesRead = await stream.ReadAsync(this.buffer, this.bufferEnd, remaining);
+                int bytesRead = await stream.ReadAsync(this.buffer, this.bufferEnd, remaining).ConfigureAwait(false);
                 if (bytesRead == 0) {
                     throw(new ClientException("Socket disconnected while trying to read."));
                 }
@@ -306,8 +306,8 @@ namespace AsyncFastCGI {
         /// <param name="stream">Stream of the connection socket.</param>
         public async Task sendAsync(NetworkStream stream) {
             try {
-                await stream.WriteAsync(this.buffer, 0, this.bufferEnd);
-                await stream.FlushAsync();
+                await stream.WriteAsync(this.buffer, 0, this.bufferEnd).ConfigureAwait(false);
+                await stream.FlushAsync().ConfigureAwait(false);
             } catch (Exception e) {
                 throw(new ClientException("Socket disconnected while trying to write to stream.", e));
             }

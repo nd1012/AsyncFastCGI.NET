@@ -78,7 +78,7 @@ namespace AsyncFastCGI
                 Read the parameters and the header.
             */
             while(!this.parametersReceived) {
-                await this.ProcessRecordsAsync(true);
+                await this.ProcessRecordsAsync(true).ConfigureAwait(false);
             }
 
             this.initialized = true;
@@ -96,7 +96,7 @@ namespace AsyncFastCGI
         /// </summary>
         public async Task ReadAllAndDiscardAsync() {
             while(!this.inputCompleted) {
-                await this.ProcessRecordsAsync(false, true);
+                await this.ProcessRecordsAsync(false, true).ConfigureAwait(false);
             }
         }
 
@@ -105,7 +105,7 @@ namespace AsyncFastCGI
         /// </summary>
         private async Task ReadAllAsync() {
             while(!this.inputCompleted) {
-                await this.ProcessRecordsAsync(false, false);
+                await this.ProcessRecordsAsync(false, false).ConfigureAwait(false);
             }
         }
 
@@ -116,7 +116,7 @@ namespace AsyncFastCGI
         /// <returns></returns>
         public async Task<string> GetContentAsync() {
             if (!this.inputCompleted) {
-                await this.ReadAllAsync();
+                await this.ReadAllAsync().ConfigureAwait(false);
             }
 
             return Encoding.UTF8.GetString(this.inputBuffer.Copy());
@@ -131,7 +131,7 @@ namespace AsyncFastCGI
         /// <returns>Full input data in binary form.</returns>
         public async Task<byte[]> GetBinaryContentAsync() {
             if (!this.inputCompleted) {
-                await this.ReadAllAsync();
+                await this.ReadAllAsync().ConfigureAwait(false);
             }
 
             return this.inputBuffer.Copy();
@@ -207,7 +207,7 @@ namespace AsyncFastCGI
             bool result;
 
             while(true) {
-                result = await this.inputRecord.ProcessInputAsync(stream);
+                result = await this.inputRecord.ProcessInputAsync(stream).ConfigureAwait(false);
 
                 if (result) {
                     // A complete record has been reconstructed.

@@ -79,7 +79,7 @@ namespace AsyncFastCGI
             this.outputBuffer.Write(
                 Encoding.UTF8.GetBytes(data)
             );
-            await this.sendBuffer(false);
+            await this.sendBuffer(false).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace AsyncFastCGI
             }
 
             this.outputBuffer.Write(data);
-            await this.sendBuffer(false);
+            await this.sendBuffer(false).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -113,19 +113,19 @@ namespace AsyncFastCGI
                 return;
             }
 
-            await this.sendBuffer(true);
+            await this.sendBuffer(true).ConfigureAwait(false);
 
             /*
                 Send an empty STDOUT closing record.
             */
             this.record.STDOUT(this.requestID, null);
-            await this.record.sendAsync(this.stream);
+            await this.record.sendAsync(this.stream).ConfigureAwait(false);
 
             /*
                 Send an "end request" record.
             */
             this.record.END_REQUEST(this.requestID, 0, Record.PROTOCOL_STATUS_REQUEST_COMPLETE);
-            await this.record.sendAsync(this.stream);
+            await this.record.sendAsync(this.stream).ConfigureAwait(false);
             
             this.ended = true;
         }
@@ -198,12 +198,12 @@ namespace AsyncFastCGI
                 }
 
                 if (!this.input.IsInputCompleted()) {
-                    await this.input.ReadAllAndDiscardAsync();
+                    await this.input.ReadAllAndDiscardAsync().ConfigureAwait(false);
                 }
 
                 this.record.STDOUT(this.requestID, this.outputBuffer);
                 try {
-                    await this.record.sendAsync(this.stream);
+                    await this.record.sendAsync(this.stream).ConfigureAwait(false);
                 } catch (Exception e) {
                     Console.WriteLine(e.ToString());
                     this.ended = true;
